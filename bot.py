@@ -7,25 +7,16 @@ import os
 import requests
 from telegram import Bot
 import logging
-import random  # برای shuffle رندوم
+import random  
 
 from bs4 import BeautifulSoup
 
 # تنظیمات - عوض کن!
-BOT_TOKEN = "8297507213:AAExuYByDdP5cRaY0A0JRfMVdp9G58vj_Zs"  # مثلاً: "7642893472:AAFxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-CHANNEL_ID = "@my_Latest_news"  # مثال: "@MyNews24"
+BOT_TOKEN = "8297507213:AAExuYByDdP5cRaY0A0JRfMVdp9G58vj_Zs"
+CHANNEL_ID = "@my_Latest_news"
 
-# RSS feeds
-RSS_FEEDS = [
-    "https://www.farsnews.ir/rss",
-    "https://www.tasnimnews.com/fa/rss",
-    "https://www.mehrnews.com/rss",
-    "https://www.isna.ir/rss",
-    "https://www.irna.ir/rss",
-    "https://www.eghtesadonline.com/rss",
-    "https://www.donya-e-eqtesad.com/rss",
-    "https://www.khabaronline.ir/rss",
-    # آزاد/بین‌المللی
+# RSS feeds - منابع آزاد رو بیشتر (وزن ۲ برابر داخلی)
+FREE_FEEDS = [
     "https://www.iranintl.com/rss",
     "https://ir.voanews.com/rss.xml",
     "https://www.manototv.com/rss",
@@ -34,6 +25,21 @@ RSS_FEEDS = [
     "https://feeds.bbci.co.uk/persian/rss.xml",
     "https://www.alarabiya.net/persian/rss",
     "https://www.radiozamaneh.com/rss",
+    "https://www.rfi.fr/fa/rss",  # RFI فارسی (جدید)
+    "https://www.euronews.com/rss/persian.xml",  # Euronews فارسی (جدید)
+    "https://www.radiofarda.com/api/zq_ottqem_tq",  # تکرار برای وزن
+    "https://feeds.bbci.co.uk/persian/rss.xml",  # تکرار برای وزن
+]
+
+DOMESTIC_FEEDS = [
+    "https://www.farsnews.ir/rss",
+    "https://www.tasnimnews.com/fa/rss",
+    "https://www.mehrnews.com/rss",
+    "https://www.isna.ir/rss",
+    "https://www.irna.ir/rss",
+    "https://www.eghtesadonline.com/rss",
+    "https://www.donya-e-eqtesad.com/rss",
+    "https://www.khabaronline.ir/rss",
 ]
 
 # فایل برای ذخیره seen_hashes
@@ -79,11 +85,11 @@ def download_video(url):
     return None
 
 async def send_news():
-    # رندوم shuffle RSS feeds برای تعادل منابع
-    random.shuffle(RSS_FEEDS)
+    # وزن‌دار رندوم: آزاد وزن ۲، داخلی ۱ (بیشتر آزاد بیاد)
+    feeds_to_check = random.choices(FREE_FEEDS, DOMESTIC_FEEDS, weights=[2, 1], k=len(FREE_FEEDS + DOMESTIC_FEEDS))
     
     new_posts = 0
-    for url in RSS_FEEDS:
+    for url in feeds_to_check:
         try:
             feed = feedparser.parse(url, request_headers={'User-Agent': 'NewsBot/1.0'})
             if not feed.entries:
