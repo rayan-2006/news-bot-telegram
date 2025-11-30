@@ -100,6 +100,11 @@ async def send_news():
                     continue
                 title = entry.title.strip()
                 link = entry.link.strip()
+                
+                # فیلتر عنوان فارسی (حروف عربی/فارسی داشته باشه)
+                if not re.match(r'[\u0600-\u06FF]', title):
+                    continue  # skip اگر انگلیسی بود
+                
                 # متن کامل
                 try:
                     # اول سعی کن از content یا summary
