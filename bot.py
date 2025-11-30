@@ -15,7 +15,7 @@ from bs4 import BeautifulSoup
 BOT_TOKEN = "8297507213:AAExuYByDdP5cRaY0A0JRfMVdp9G58vj_Zs"
 CHANNEL_ID = "@my_Latest_news"
 
-# RSS feeds - منابع آزاد رو بیشتر (وزن ۲ برابر داخلی)
+# RSS feeds - منابع آزاد رو بیشتر (وزن ۳ برابر داخلی)
 FREE_FEEDS = [
     "https://www.iranintl.com/rss",
     "https://ir.voanews.com/rss.xml",
@@ -25,8 +25,8 @@ FREE_FEEDS = [
     "https://feeds.bbci.co.uk/persian/rss.xml",
     "https://www.alarabiya.net/persian/rss",
     "https://www.radiozamaneh.com/rss",
-    "https://www.rfi.fr/fa/rss",  # RFI فارسی (جدید)
-    "https://www.euronews.com/rss/persian.xml",  # Euronews فارسی (جدید)
+    "https://www.rfi.fr/fa/rss",  # RFI فارسی
+    "https://www.euronews.com/rss/persian.xml",  # Euronews فارسی
 ]
 
 DOMESTIC_FEEDS = [
@@ -82,9 +82,18 @@ def download_video(url):
         pass
     return None
 
+def short_link(link):
+    try:
+        response = requests.get(f"http://tinyurl.com/api-create.php?url={link}", timeout=5)
+        if response.status_code == 200:
+            return response.text.strip()
+    except:
+        pass
+    return link  # اگر کوتاه نشد، اصلی رو برگردون
+
 async def send_news():
-    # وزن‌دار رندوم: آزاد وزن ۲، داخلی ۱ (بیشتر آزاد بیاد)
-    combined_feeds = FREE_FEEDS * 2 + DOMESTIC_FEEDS
+    # وزن‌دار رندوم: آزاد وزن ۳، داخلی ۱ (بیشتر آزاد بیاد)
+    combined_feeds = FREE_FEEDS * 3 + DOMESTIC_FEEDS
     random.shuffle(combined_feeds)
     feeds_to_check = combined_feeds[:len(FREE_FEEDS + DOMESTIC_FEEDS)]  # تعداد اصلی
     
@@ -135,8 +144,9 @@ async def send_news():
                             full_text = clean_html(full_text)
                             full_text = re.sub(r'\s+', ' ', full_text).strip()
                     
-                    if len(full_text) > 4000:  # حد بالاتر برای متن کامل‌تر
-                        full_text = full_text[:4000] + "\n\nادامه در منبع ⬇️"
+                    # برش بدون "ادامه در منبع" (فقط ... اگر لازم)
+                    if len(full_text) > 4000:
+                        full_text = full_text[:4000] + " ..."
                 except:
                     full_text = "متن کامل در منبع موجود است."
                 # عکس یا ویدیو - دانلود کن
@@ -163,8 +173,9 @@ async def send_news():
                             media_data = download_video(enc.url)
                             media_type = 'video'
                             break
-                # پیام - عنوان بولد
-                caption = f"🟥 <b>{title}</b>\n\n{full_text}\n\n@my_Latest_news"
+                # پیام - عنوان بولد + کپی‌رایت
+                short_link_url = short_link(link)
+                caption = f"🟥 <b>{title}</b>\n\n{full_text}\n\n@my_Latest_news\n\nبرای اطلاعات بیشتر به منبع خبر مراجعه کنید\n🔗 {short_link_url}"
                 try:
                     if media_data:
                         if media_type == 'video':
