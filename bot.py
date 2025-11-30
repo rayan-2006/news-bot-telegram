@@ -27,8 +27,6 @@ FREE_FEEDS = [
     "https://www.radiozamaneh.com/rss",
     "https://www.rfi.fr/fa/rss",  # RFI فارسی (جدید)
     "https://www.euronews.com/rss/persian.xml",  # Euronews فارسی (جدید)
-    "https://www.radiofarda.com/api/zq_ottqem_tq",  # تکرار برای وزن
-    "https://feeds.bbci.co.uk/persian/rss.xml",  # تکرار برای وزن
 ]
 
 DOMESTIC_FEEDS = [
@@ -86,7 +84,9 @@ def download_video(url):
 
 async def send_news():
     # وزن‌دار رندوم: آزاد وزن ۲، داخلی ۱ (بیشتر آزاد بیاد)
-    feeds_to_check = random.choices(FREE_FEEDS, DOMESTIC_FEEDS, weights=[2, 1], k=len(FREE_FEEDS + DOMESTIC_FEEDS))
+    combined_feeds = FREE_FEEDS * 2 + DOMESTIC_FEEDS
+    random.shuffle(combined_feeds)
+    feeds_to_check = combined_feeds[:len(FREE_FEEDS + DOMESTIC_FEEDS)]  # تعداد اصلی
     
     new_posts = 0
     for url in feeds_to_check:
