@@ -82,14 +82,13 @@ def download_video(url):
         pass
     return None
 
-def short_link(link):
-    try:
-        response = requests.get(f"http://tinyurl.com/api-create.php?url={link}", timeout=5)
-        if response.status_code == 200:
-            return response.text.strip()
-    except:
-        pass
-    return link  # اگر کوتاه نشد، اصلی رو برگردون
+def is_persian_text(text):
+    # چک درصد حروف فارسی/عربی (حداقل ۶۰%)
+    persian_chars = re.findall(r'[\u0600-\u06FF]', text)
+    total_chars = len(text)
+    if total_chars == 0:
+        return False
+    return len(persian_chars) / total_chars >= 0.6  # ۶۰% فارسی
 
 async def send_news():
     # وزن‌دار رندوم: آزاد وزن ۳، داخلی ۱ (بیشتر آزاد بیاد)
@@ -110,9 +109,9 @@ async def send_news():
                 title = entry.title.strip()
                 link = entry.link.strip()
                 
-                # فیلتر عنوان فارسی (حروف عربی/فارسی داشته باشه)
-                if not re.match(r'[\u0600-\u06FF]', title):
-                    continue  # skip اگر انگلیسی بود
+                # فیلتر عنوان فارسی (حداقل ۶۰% حروف فارسی)
+                if not is_persian_text(title):
+                    continue  # skip اگر انگلیسی یا مخلوط بود
                 
                 # متن کامل
                 try:
@@ -173,9 +172,8 @@ async def send_news():
                             media_data = download_video(enc.url)
                             media_type = 'video'
                             break
-                # پیام - عنوان بولد + کپی‌رایت
-                short_link_url = short_link(link)
-                caption = f"🟥 <b>{title}</b>\n\n{full_text}\n\n@my_Latest_news\n\nبرای اطلاعات بیشتر به منبع خبر مراجعه کنید\n🔗 {short_link_url}"
+                # پیام - عنوان بولد
+                caption = f"🟥 <b>{title}</b>\n\n{full_text}\n\n@my_Latest_news"
                 try:
                     if media_data:
                         if media_type == 'video':
